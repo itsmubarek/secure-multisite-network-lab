@@ -1,0 +1,11 @@
+# never commit secrets, keys, VM disks
+.lab-credentials
+.keys/
+*.vdi
+*.vmdk
+*.iso
+*.key
+*.pem
+*.srl
+configs/**/private/
+evidence/**/*.pcap

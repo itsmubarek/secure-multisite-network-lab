@@ -1,0 +1,79 @@
+# Phase 2 - Suricata IDS and central logging
+2026-10-02 17:56 UTC
+
+## Suricata self-check on gw-a
+active
+[5185 - Suricata-Main] 2026-10-02 17:56:30 Info: detect: 1 rule files processed. 3 rules successfully loaded, 0 rules failed, 0 rules skipped
+[5296 - Suricata-Main] 2026-10-02 17:56:33 Info: detect: 1 rule files processed. 3 rules successfully loaded, 0 rules failed, 0 rules skipped
+
+## ATTACK 1: nmap SYN scan of web-dmz (ports 1-100) from client-a
+Host is up.
+Nmap done: 1 IP address (1 host up) scanned in 21.75 seconds
+
+## ATTACK 2: nmap SYN scan of web-dmz from client-b (Site B, through the VPN)
+Host is up.
+Nmap done: 1 IP address (1 host up) scanned in 22.23 seconds
+
+## ATTACK 3: ping sweep style burst from client-a
+12 packets transmitted, 12 received, 0% packet loss, time 3999ms
+
+## Suricata alerts (fast.log on gw-a)
+10/02/2026-17:56:56.875670  [**] [1:1000003:1] LAB SSH connection attempt towards protected networks [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.10:43382 ->
+10/02/2026-17:56:58.901728  [**] [1:1000001:1] LAB TCP SYN scan: many ports probed by one source [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.10:43384 -> 10.
+10/02/2026-17:56:58.902694  [**] [1:1000003:1] LAB SSH connection attempt towards protected networks [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.10:43384 ->
+10/02/2026-17:57:08.107644  [**] [1:1000001:1] LAB TCP SYN scan: many ports probed by one source [**] [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.10:43382 -> 10.
+10/02/2026-17:57:45.282944  [**] [1:1000002:1] LAB ICMP echo flood or ping sweep [**] [Classification: Detection of a Network Scan] [Priority: 3] {ICMP} 10.10.1.10:8 -> 10.10.2.10:0
+
+## alert counts per rule (eve.json)
+      1 LAB ICMP echo flood or ping sweep
+      2 LAB SSH connection attempt towards protected networks
+      2 LAB TCP SYN scan: many ports probed by one source
+
+## CENTRAL LOGGING: files on the collector (client-a:/var/log/remote)
+/var/log/remote/gw-a/:
+kernel.log
+rsyslogd.log
+sshd-session.log
+sudo.log
+suricata.log
+systemd-logind.log
+systemd.log
+
+/var/log/remote/gw-b/:
+kernel.log
+rsyslogd.log
+sshd-session.log
+sudo.log
+systemd-logind.log
+systemd.log
+
+/var/log/remote/web-dmz/:
+chronyd.log
+kernel.log
+rsyslogd.log
+sshd-session.log
+sudo.log
+systemd-logind.log
+systemd.log
+
+## Suricata alerts and firewall drops seen on the collector
+2026-10-02T17:56:58+00:00 gw-a suricata[5296]: [1:1000003:1] LAB SSH connection attempt towards protected networks [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.10:43384 -> 10.10.2.10
+2026-10-02T17:57:08+00:00 gw-a suricata[5296]: [1:1000001:1] LAB TCP SYN scan: many ports probed by one source [Classification: Attempted Information Leak] [Priority: 2] {TCP} 10.10.1.10:43382 -> 10.10.2.10:59
+2026-10-02T17:57:45+00:00 gw-a suricata[5296]: [1:1000002:1] LAB ICMP echo flood or ping sweep [Classification: Detection of a Network Scan] [Priority: 3] {ICMP} 10.10.1.10:8 -> 10.10.2.10:0
+---
+2026-10-02T17:56:56+00:00 gw-a kernel: FW-DROP: IN=enp0s9 OUT=enp0s10 MAC=08:00:27:e5:54:7d:08:00:27:89:c0:17:08:00 SRC=10.10.1.10 DST=10.10.2.10 LEN=44 TOS=0x00 PREC=0x00 TTL=51 ID=22966 PROTO=TCP SPT=43382 DPT=66 WINDO
+2026-10-02T17:57:09+00:00 gw-a kernel: FW-DROP: IN=enp0s9 OUT=enp0s10 MAC=08:00:27:e5:54:7d:08:00:27:89:c0:17:08:00 SRC=10.10.1.10 DST=10.10.2.10 LEN=44 TOS=0x00 PREC=0x00 TTL=42 ID=56031 PROTO=TCP SPT=43384 DPT=40 WINDO
+---
+log lines per source host:
+    3 /var/log/remote/gw-b/sshd-session.log
+    1 /var/log/remote/gw-b/sudo.log
+    8 /var/log/remote/gw-b/systemd.log
+    2 /var/log/remote/gw-b/systemd-logind.log
+    1 /var/log/remote/web-dmz/chronyd.log
+    1 /var/log/remote/web-dmz/kernel.log
+    5 /var/log/remote/web-dmz/rsyslogd.log
+    3 /var/log/remote/web-dmz/sshd-session.log
+    1 /var/log/remote/web-dmz/sudo.log
+    8 /var/log/remote/web-dmz/systemd.log
+    2 /var/log/remote/web-dmz/systemd-logind.log
+  226 total

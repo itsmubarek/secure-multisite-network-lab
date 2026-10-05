@@ -1,0 +1,72 @@
+# Phase 1 / Step 7b - AFTER the VPN: WireGuard site-to-site tunnel
+2026-10-02 17:53 UTC
+
+## tunnel state on gw-a (public information only)
+interface: wg0
+  public key: e0K0rK+S4oFKm9v4fk+gAGa2QQPF2fydP62M3v9pXxI=
+  private key: (hidden)
+  listening port: 51820
+
+peer: 0kyYwt1sB33vPpbYHfYTpnMiQCbcPn2Rah1BV2DKB3c=
+  preshared key: (hidden)
+  endpoint: 192.0.2.2:51820
+  allowed ips: 10.99.0.2/32, 10.20.1.0/24
+  latest handshake: 16 seconds ago
+  transfer: 360 B received, 364 B sent
+  persistent keepalive: every 25 seconds
+wg0              UNKNOWN        10.99.0.1/24 
+10.20.1.0/24 dev wg0 scope link 
+10.99.0.0/24 dev wg0 proto kernel scope link src 10.99.0.1 
+
+## tunnel endpoints reach each other (10.99.0.1 <-> 10.99.0.2)
+2 packets transmitted, 2 received, 0% packet loss, time 1539ms
+rtt min/avg/max/mdev = 6.493/6.797/7.101/0.304 ms
+
+## client-a -> client-b through the tunnel
+3 packets transmitted, 3 received, 0% packet loss, time 2462ms
+rtt min/avg/max/mdev = 7.704/9.750/11.416/1.539 ms
+
+traceroute to 10.20.1.10 (10.20.1.10), 5 hops max, 60 byte packets
+ 1  10.10.1.1  3.227 ms  1.854 ms  1.913 ms
+ 2  * * *
+ 3  * * *
+ 4  * * *
+ 5  * * *
+
+## CAPTURE ON THE WAN INTERFACE (what an eavesdropper sees) while client-a pings with payload 'SECRET!!'
+started
+2 packets transmitted, 2 received, 0% packet loss, time 1022ms
+--- tcpdump on enp0s8 (WAN):
+17:53:43.390651 IP6 fe80::a00:27ff:fe36:fd15 > ff02::2: ICMP6, router solicitation, length 16
+	0x0000:  6000 1123 0010 3aff fe80 0000 0000 0000  `..#..:.........
+	0x0010:  0a00 27ff fe36 fd15 ff02 0000 0000 0000  ..'..6..........
+	0x0020:  0000 0000 0000 0002 8500 2296 0000 0000  ..........".....
+	0x0030:  0101 0800 2736 fd15                      ....'6..
+17:53:45.548697 IP 192.0.2.1.51820 > 192.0.2.2.51820: UDP, length 128
+	0x0000:  4500 009c 0429 0000 4011 f224 c000 0201  E....)..@..$....
+	0x0010:  c000 0202 ca6c ca6c 0088 849d 0400 0000  .....l.l........
+	0x0020:  a0bb f08e 0500 0000 0000 0000 1c4f 5405  .............OT.
+	0x0030:  90a1 2fb0 ebf2 bb1c d875 6a8c 282c b318  ../......uj.(,..
+	0x0040:  b5fe 6a18 40a3 c0f3 3518 4d37 bf50 3439  ..j.@...5.M7.P49
+	0x0050:  fae6 e12c 0f18 dff6 7898 ae6c 60b1 6cfc  ...,....x..l`.l.
+	0x0060:  c8c4 0e70 33c0 cf91 040d 3079 ef23 9e9d  ...p3.....0y.#..
+	0x0070:  8684 af61 5a42 2ac3 9dfb af44 f00c 746e  ...aZB*....D..tn
+	0x0080:  228e 4b3d af93 bd0a c490 b34c 381e 7f67  ".K=.......L8..g
+	0x0090:  591d a24a 2593 8578 ed55 a95c            Y..J%..x.U.\
+17:53:45.554281 IP 192.0.2.2.51820 > 192.0.2.1.51820: UDP, length 128
+	0x0000:  4500 009c 2ac6 0000 4011 cb87 c000 0202  E...*...@.......
+	0x0010:  c000 0201 ca6c ca6c 0088 73ca 0400 0000  .....l.l..s.....
+	0x0020:  1af1 d488 0600 0000 0000 0000 b3b9 9d72  ...............r
+	0x0030:  548b cd9e e3ac 9f50 d6f9 b6b9 599b 6b0b  T......P....Y.k.
+	0x0040:  ce65 ca3c b997 9eff be75 ed86 2345 3c82  .e.<.....u..#E<.
+--- does the string SECRET appear anywhere in the WAN capture?
+0
+--- tcpdump on wg0 (inside the tunnel, after decryption):
+17:53:45.546382 IP 10.10.1.10 > 10.20.1.10: ICMP echo request, id 45074, seq 1, length 64
+	0x0000:  4500 0054 65c9 4000 3f01 bfae 0a0a 010a  E..Te.@.?.......
+	0x0010:  0a14 010a 0800 9201 b012 0001 a9ef bf6a  ...............j
+	0x0020:  0000 0000 534f 0800 0000 0000 5345 4352  ....SO......SECR
+	0x0030:  4554 2121 5345 4352 4554 2121 5345 4352  ET!!SECRET!!SECR
+	0x0040:  4554 2121 5345 4352 4554 2121 5345 4352  ET!!SECRET!!SECR
+	0x0050:  4554 2121                                ET!!
+17:53:45.554816 IP 10.20.1.10 > 10.10.1.10: ICMP echo reply, id 45074, seq 1, length 64

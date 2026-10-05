@@ -1,0 +1,43 @@
+# Phase 1 / Step 5 - firewall tests (default-deny on gw-a / gw-b)
+2026-10-02 17:48 UTC
+
+## ALLOWED: client-a -> web-dmz ICMP echo
+2 packets transmitted, 2 received, 0% packet loss, time 1081ms
+
+## ALLOWED: client-a -> client-b ICMP echo (site-to-site)
+2 packets transmitted, 2 received, 0% packet loss, time 1012ms
+
+## BLOCKED: web-dmz (DMZ) -> client-a  (the DMZ may not initiate connections)
+2 packets transmitted, 0 received, 100% packet loss, time 1052ms
+
+## BLOCKED: client-a -> web-dmz tcp/80 (nginx listens on 80, firewall allows only 443)
+http_code=000
+curl: connection timed out (dropped by firewall)
+
+## nmap from client-a against web-dmz (22,80,443)
+Host is up (0.0090s latency).
+PORT    STATE    SERVICE
+22/tcp  filtered ssh
+80/tcp  filtered http
+443/tcp closed   https
+Nmap done: 1 IP address (1 host up) scanned in 2.87 seconds
+
+## BLOCKED: gw-b (as the 'internet') -> client-a (inbound from WAN)
+2 packets transmitted, 0 received, 100% packet loss, time 1091ms
+
+## gw-a FORWARD counters
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        7   544 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+2        1    84 ACCEPT     icmp --  enp0s9 enp0s10  0.0.0.0/0            10.10.2.10           icmptype 8
+3        1    44 ACCEPT     tcp  --  enp0s9 enp0s10  0.0.0.0/0            10.10.2.10           tcp dpt:443
+4        1    84 ACCEPT     icmp --  enp0s9 *       0.0.0.0/0            10.20.1.0/24         icmptype 8
+5        0     0 ACCEPT     tcp  --  enp0s9 *       0.0.0.0/0            10.20.1.0/24         tcp dpt:443
+6        0     0 ACCEPT     icmp --  *      *       10.20.1.0/24         10.10.2.10           icmptype 8
+7        0     0 ACCEPT     tcp  --  *      *       10.20.1.0/24         10.10.2.10           tcp dpt:443
+8       11   692 LOG_DROP   all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+## drop log on gw-a
+Oct 02 17:49:00 gw-a kernel: FW-DROP: IN=enp0s9 OUT=enp0s10 MAC=08:00:27:e5:54:7d:08:00:27:89:c0:17:08:00 SRC=10.10.1.10 DST=10.10.2.10 LEN=44 TOS=0x00 PREC=0x00 TTL=55 ID=43928 PROTO=TCP SPT=45181 DPT=80 WINDOW=1024 RES=0x00 SYN URGP=0 
+Oct 02 17:49:01 gw-a kernel: FW-DROP: IN=enp0s8 OUT=enp0s9 MAC=08:00:27:36:fd:15:08:00:27:f6:12:24:08:00 SRC=192.0.2.2 DST=10.10.1.10 LEN=84 TOS=0x00 PREC=0x00 TTL=63 ID=15053 DF PROTO=ICMP TYPE=8 CODE=0 ID=23282 SEQ=1 
+Oct 02 17:49:02 gw-a kernel: FW-DROP: IN=enp0s8 OUT=enp0s9 MAC=08:00:27:36:fd:15:08:00:27:f6:12:24:08:00 SRC=192.0.2.2 DST=10.10.1.10 LEN=84 TOS=0x00 PREC=0x00 TTL=63 ID=15865 DF PROTO=ICMP TYPE=8 CODE=0 ID=23282 SEQ=2 

@@ -1,0 +1,16 @@
+# Phase 2 (addendum) - a scan from Site B is stopped by gw-b and visible in the central log
+2026-10-02 17:59 UTC
+
+## gw-b FORWARD counters: how many scan packets were dropped at Site B's gateway
+4        0     0 ACCEPT     icmp --  enp0s9 *       0.0.0.0/0            10.10.1.0/24         icmptype 8
+5        0     0 ACCEPT     icmp --  wg0    *       10.10.1.0/24         10.20.1.0/24         icmptype 8
+6      341 15340 LOG_DROP   all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+## the same drops, read on the central collector (client-a:/var/log/remote/gw-b/kernel.log)
+FW-DROP events from gw-b: 23
+2026-10-02T17:58:39+00:00 gw-b kernel: FW-DROP: IN=enp0s9 OUT=wg0 MAC=08:00:27:a5:a7:7d:08:00:27:0b:29:16:08:00 SRC=10.20.1.10 DST=10.10.2.10 LEN=44 TOS=0x00 PREC=0x00 TTL=36 ID=4495 PROTO=TCP SPT=48881 DPT=25 WINDOW=1024 RES=0x00
+2026-10-02T17:58:47+00:00 gw-b kernel: FW-DROP: IN=enp0s9 OUT=wg0 MAC=08:00:27:a5:a7:7d:08:00:27:0b:29:16:08:00 SRC=10.20.1.10 DST=10.10.2.10 LEN=44 TOS=0x00 PREC=0x00 TTL=58 ID=27179 PROTO=TCP SPT=48881 DPT=33 WINDOW=1024 RES=0x0
+2026-10-02T17:59:15+00:00 gw-b kernel: FW-DROP: IN=enp0s9 OUT=wg0 MAC=08:00:27:a5:a7:7d:08:00:27:0b:29:16:08:00 SRC=10.20.1.10 DST=10.10.1.10 LEN=60 TOS=0x00 PREC=0x00 TTL=63 ID=6117 DF PROTO=TCP SPT=51734 DPT=514 WINDOW=64240 RES
+
+## conclusion: egress filtering at the branch gateway stops the scan BEFORE it enters the tunnel,
+## so the IDS on gw-a (LAN-A + wg0) sees no scan packets from Site B; the drops are logged centrally instead.

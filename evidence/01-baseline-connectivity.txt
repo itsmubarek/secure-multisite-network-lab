@@ -1,0 +1,31 @@
+# Phase 1 / Step 4 - baseline connectivity (no firewall, no VPN yet)
+2026-10-02 17:47 UTC
+
+## routes on client-a
+enp0s8           UP             10.10.1.10/24 fe80::a00:27ff:fe89:c017/64 
+default via 10.10.1.1 dev enp0s8 proto static 
+10.0.2.0/24 dev enp0s3 proto kernel scope link src 10.0.2.15 metric 100 
+10.0.2.3 dev enp0s3 proto dhcp scope link src 10.0.2.15 metric 100 
+10.10.1.0/24 dev enp0s8 proto kernel scope link src 10.10.1.10 
+
+## client-a -> gw-a (10.10.1.1)
+2 packets transmitted, 2 received, 0% packet loss, time 2997ms
+rtt min/avg/max/mdev = 2.531/2.714/2.897/0.183 ms
+
+## client-a -> web-dmz (10.10.2.10) across gw-a
+2 packets transmitted, 2 received, 0% packet loss, time 1081ms
+rtt min/avg/max/mdev = 4.932/5.404/5.877/0.472 ms
+
+## client-a -> client-b (10.20.1.10) across gw-a, WAN, gw-b
+PING 10.20.1.10 (10.20.1.10) 56(84) bytes of data.
+64 bytes from 10.20.1.10: icmp_seq=1 ttl=62 time=5.74 ms
+64 bytes from 10.20.1.10: icmp_seq=2 ttl=62 time=4.61 ms
+64 bytes from 10.20.1.10: icmp_seq=3 ttl=62 time=8.05 ms
+
+--- 10.20.1.10 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2085ms
+rtt min/avg/max/mdev = 4.614/6.133/8.046/1.428 ms
+traceroute to 10.20.1.10 (10.20.1.10), 5 hops max, 60 byte packets
+ 1  10.10.1.1  3.742 ms  5.136 ms  4.841 ms
+ 2  192.0.2.2  9.903 ms  9.042 ms  8.782 ms
+ 3  10.20.1.10  15.151 ms  21.690 ms  21.667 ms

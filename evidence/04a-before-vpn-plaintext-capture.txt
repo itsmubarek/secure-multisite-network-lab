@@ -1,0 +1,20 @@
+# Phase 1 / Step 7a - BEFORE the VPN: traffic between the sites crosses the WAN in plaintext
+2026-10-02 17:51 UTC
+
+## capture on gw-a WAN interface (enp0s8) while client-a pings client-b with the payload pattern 'SECRET!'
+started
+2 packets transmitted, 2 received, 0% packet loss, time 1147ms
+17:51:48.005348 IP 10.10.1.10 > 10.20.1.10: ICMP echo request, id 45072, seq 1, length 64
+	0x0000:  4500 0054 8545 4000 3f01 a032 0a0a 010a  E..T.E@.?..2....
+	0x0010:  0a14 010a 0800 9544 b010 0001 34ef bf6a  .......D....4..j
+	0x0020:  0000 0000 cd0e 0000 0000 0000 5345 4352  ............SECR
+	0x0030:  4554 2121 5345 4352 4554 2121 5345 4352  ET!!SECRET!!SECR
+	0x0040:  4554 2121 5345 4352 4554 2121 5345 4352  ET!!SECRET!!SECR
+	0x0050:  4554 2121                                ET!!
+17:51:49.152088 IP 10.10.1.10 > 10.20.1.10: ICMP echo request, id 45072, seq 2, length 64
+	0x0000:  4500 0054 85b7 4000 3f01 9fc0 0a0a 010a  E..T..@.?.......
+	0x0010:  0a14 010a 0800 1506 b010 0002 35ef bf6a  ............5..j
+	0x0020:  0000 0000 4a4c 0200 0000 0000 5345 4352  ....JL......SECR
+	0x0030:  4554 2121 5345 4352 4554 2121 5345 4352  ET!!SECRET!!SECR
+	0x0040:  4554 2121 5345 4352 4554 2121 5345 4352  ET!!SECRET!!SECR
+	0x0050:  4554 2121                                ET!!

@@ -1,0 +1,57 @@
+# Phase 1 / Step 6 - PKI and HTTPS tests
+2026-10-02 17:51 UTC
+
+## certificate chain on the CA host (client-a)
+-- root/certs/root.crt
+subject=O=SecurityLab, CN=SecurityLab Root CA
+issuer=O=SecurityLab, CN=SecurityLab Root CA
+notBefore=Oct  2 17:50:26 2026 GMT
+notAfter=Sep 29 17:50:26 2036 GMT
+    CA:TRUE
+-- intermediate/certs/intermediate.crt
+subject=O=SecurityLab, CN=SecurityLab Intermediate CA
+issuer=O=SecurityLab, CN=SecurityLab Root CA
+notBefore=Oct  2 17:50:26 2026 GMT
+notAfter=Oct  1 17:50:26 2031 GMT
+    CA:TRUE, pathlen:0
+-- intermediate/certs/web.crt
+subject=O=SecurityLab, CN=web.lab.local
+issuer=O=SecurityLab, CN=SecurityLab Intermediate CA
+notBefore=Oct  2 17:50:32 2026 GMT
+notAfter=Oct  2 17:50:32 2027 GMT
+    CA:FALSE
+    DNS:web.lab.local, IP Address:10.10.2.10
+
+## NEGATIVE: curl without trusting the lab CA
+curl: (60) SSL certificate OpenSSL verify result: unable to get local issuer certificate (20)
+More details here: https://curl.se/docs/sslcerts.html
+
+(exit: 0)
+
+## POSITIVE: curl with the lab root CA
+<h1>SecurityLab intranet</h1><p>served over TLS with a certificate from the lab PKI</p>
+
+http_code=200 tls=0 (0 = verified)
+
+## TLS handshake details (protocol and cipher)
+subject=O=SecurityLab, CN=web.lab.local
+issuer=O=SecurityLab, CN=SecurityLab Intermediate CA
+Verification: OK
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+Protocol: TLSv1.3
+Verify return code: 0 (ok)
+
+## chain validation WITH CRL: the valid server certificate
+intermediate/certs/web.crt: OK
+
+## chain validation WITH CRL: the REVOKED certificate (old.lab.local, reason keyCompromise)
+O=SecurityLab, CN=old.lab.local
+error 23 at 0 depth lookup: certificate revoked
+error intermediate/certs/old.crt: verification failed
+
+        Issuer: O=SecurityLab, CN=SecurityLab Intermediate CA
+        Last Update: Oct  2 17:50:53 2026 GMT
+        Next Update: Nov  1 17:50:53 2026 GMT
+    Serial Number: 1001
+        Revocation Date: Oct  2 17:50:53 2026 GMT
+            X509v3 CRL Reason Code: 

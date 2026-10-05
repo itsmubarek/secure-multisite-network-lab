@@ -1,0 +1,39 @@
+# Phase 1 / Step 8 - end-to-end tests: HTTPS across the VPN, and policy enforcement
+2026-10-02 17:54 UTC
+
+## ALLOWED: client-b (Site B) -> https://web.lab.local over VPN + firewall, certificate verified against the lab root CA
+<h1>SecurityLab intranet</h1><p>served over TLS with a certificate from the lab PKI</p>
+
+http_code=200 tls_verify=0
+
+## ALLOWED: client-b -> web-dmz ICMP
+2 packets transmitted, 2 received, 0% packet loss, time 1030ms
+
+## BLOCKED: client-b -> client-a tcp/22 (not in policy)
+no connection: dropped by the gateway firewall
+
+## BLOCKED: client-b -> web-dmz tcp/22
+no connection: dropped by the gateway firewall
+
+## BLOCKED: web-dmz (DMZ) cannot initiate towards LAN-A or Site B
+1 packets transmitted, 0 received, 100% packet loss, time 0ms
+1 packets transmitted, 0 received, 100% packet loss, time 0ms
+
+## nmap from client-b (Site B) against web-dmz: only 443 is reachable
+PORT    STATE    SERVICE
+22/tcp  filtered ssh
+80/tcp  filtered http
+443/tcp open     https
+Nmap done: 1 IP address (1 host up) scanned in 2.38 seconds
+
+## firewall counters on gw-a after the tests (accepted vs dropped)
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1       32  7368 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+2        0     0 ACCEPT     icmp --  enp0s9 enp0s10  0.0.0.0/0            10.10.2.10           icmptype 8
+3        0     0 ACCEPT     tcp  --  enp0s9 enp0s10  0.0.0.0/0            10.10.2.10           tcp dpt:443
+4        2   168 ACCEPT     icmp --  enp0s9 *       0.0.0.0/0            10.20.1.0/24         icmptype 8
+5        0     0 ACCEPT     tcp  --  enp0s9 *       0.0.0.0/0            10.20.1.0/24         tcp dpt:443
+6        1    84 ACCEPT     icmp --  wg0    *       10.20.1.0/24         10.10.2.10           icmptype 8
+7        2   104 ACCEPT     tcp  --  wg0    *       10.20.1.0/24         10.10.2.10           tcp dpt:443
+8       14   888 LOG_DROP   all  --  *      *       0.0.0.0/0            0.0.0.0/0           
